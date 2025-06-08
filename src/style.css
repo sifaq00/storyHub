@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.skip-to-content {
+  position: absolute;
+  left: 1rem;
+  top: 1rem;
+  z-index: 9999;
+  padding: 0.5rem 1.5rem;
+  background: #2563eb;
+  color: #fff;
+  border-radius: 0.5rem;
+  opacity: 0;
+  transform: translateY(-1rem);
+  transition: all 0.2s;
+}
+.skip-to-content:focus {
+  opacity: 1;
+  transform: translateY(0);
+}

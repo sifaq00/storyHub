@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="/src/assets/logo.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <meta name="theme-color" content="#0d6efd"> 
+
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="StoryHub">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <title>StoryHub</title>
+</head>
+<body>
+  <a href="#main-content" class="skip-to-content absolute left-2 top-2 z-[9999] px-4 py-2 bg-blue-700 text-white rounded focus:translate-y-0 focus:opacity-100 opacity-0 -translate-y-4 transition-all duration-200" tabindex="0" onclick="event.preventDefault();document.getElementById('main-content')?.focus();">
+    Skip to Content
+  </a>
+  <div id="app"></div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

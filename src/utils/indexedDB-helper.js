@@ -1,0 +1,202 @@
+// src/utils/indexedDB-helper.js
+
+const DB_NAME = 'storyhub-db';
+const DB_VERSION = 1;
+const STORIES_STORE_NAME = 'stories'; // Untuk daftar cerita (home)
+const STORY_DETAILS_STORE_NAME = 'story-details'; // Untuk detail cerita individual
+
+/**
+ * Membuka atau membuat database IndexedDB.
+ * @returns {Promise<IDBDatabase>} Promise yang resolve dengan objek database.
+ */
+const openDB = () => {
+  return new Promise((resolve, reject) => {
+    if (!('indexedDB' in window)) {
+      reject(new Error('Browser Anda tidak mendukung IndexedDB.'));
+      return;
+    }
+
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+    request.onerror = (event) => {
+      console.error('[IndexedDB] Error saat membuka database:', event.target.error);
+      reject(event.target.error);
+    };
+
+    request.onsuccess = (event) => {
+      resolve(event.target.result);
+    };
+
+    request.onupgradeneeded = (event) => {
+      console.log('[IndexedDB] Melakukan upgrade database...');
+      const db = event.target.result;
+
+      if (!db.objectStoreNames.contains(STORIES_STORE_NAME)) {
+        const storiesStore = db.createObjectStore(STORIES_STORE_NAME, { keyPath: 'id' });
+        storiesStore.createIndex('createdAt', 'createdAt', { unique: false });
+        console.log(`[IndexedDB] Object store '${STORIES_STORE_NAME}' dibuat.`);
+      }
+
+      if (!db.objectStoreNames.contains(STORY_DETAILS_STORE_NAME)) {
+        db.createObjectStore(STORY_DETAILS_STORE_NAME, { keyPath: 'id' });
+        console.log(`[IndexedDB] Object store '${STORY_DETAILS_STORE_NAME}' dibuat.`);
+      }
+    };
+  });
+};
+
+/**
+ * Menyimpan banyak cerita ke object store 'stories'.
+ * Menghapus data lama sebelum memasukkan yang baru untuk menjaga data tetap fresh.
+ * @param {Array<Object>} storiesData Array objek cerita.
+ */
+const putStories = async (storiesData) => {
+  if (!Array.isArray(storiesData)) {
+    console.error('[IndexedDB] putStories: Data harus berupa array.');
+    return;
+  }
+  try {
+    const db = await openDB();
+    const transaction = db.transaction(STORIES_STORE_NAME, 'readwrite');
+    const store = transaction.objectStore(STORIES_STORE_NAME);
+
+    // Hapus data lama sebelum memasukkan yang baru.
+    const clearRequest = store.clear();
+    await new Promise((resolve, reject) => {
+        clearRequest.onsuccess = resolve;
+        clearRequest.onerror = (event) => reject(event.target.error);
+    });
+
+    // Masukkan data baru
+    for (const story of storiesData) {
+      if (story && story.id) {
+        store.put(story);
+      }
+    }
+    return new Promise((resolve, reject) => {
+      transaction.oncomplete = resolve;
+      transaction.onerror = (event) => reject(event.target.error);
+    });
+  } catch (error) {
+    console.error('[IndexedDB] Gagal membuka DB atau menyimpan cerita:', error);
+  }
+};
+
+/**
+ * Mengambil semua cerita dari object store 'stories'.
+ * @returns {Promise<Array<Object>>} Promise yang resolve dengan array objek cerita.
+ */
+const getAllStories = async () => {
+  try {
+    const db = await openDB();
+    const transaction = db.transaction(STORIES_STORE_NAME, 'readonly');
+    const store = transaction.objectStore(STORIES_STORE_NAME);
+    const request = store.getAll();
+
+    return new Promise((resolve, reject) => {
+      request.onsuccess = (event) => resolve(event.target.result || []);
+      request.onerror = (event) => reject(event.target.error);
+    });
+  } catch (error) {
+    console.error('[IndexedDB] Gagal membuka DB untuk getAllStories:', error);
+    return [];
+  }
+};
+
+/**
+ * Menyimpan detail satu cerita ke object store 'story-details'.
+ * @param {Object} storyDetail Objek detail cerita.
+ */
+const putStoryDetail = async (storyDetail) => {
+  if (!storyDetail || !storyDetail.id) {
+    console.error('[IndexedDB] putStoryDetail: Detail cerita harus memiliki ID.');
+    return;
+  }
+  try {
+    const db = await openDB();
+    const transaction = db.transaction(STORY_DETAILS_STORE_NAME, 'readwrite');
+    const store = transaction.objectStore(STORY_DETAILS_STORE_NAME);
+    store.put(storyDetail);
+
+    return new Promise((resolve, reject) => {
+      transaction.oncomplete = resolve;
+      transaction.onerror = (event) => reject(event.target.error);
+    });
+  } catch (error) {
+    console.error('[IndexedDB] Gagal membuka DB untuk putStoryDetail:', error);
+  }
+};
+
+/**
+ * Mengambil detail satu cerita dari object store 'story-details' berdasarkan ID.
+ * @param {string} storyId ID cerita.
+ * @returns {Promise<Object|undefined>} Promise yang resolve dengan objek detail cerita atau undefined jika tidak ditemukan.
+ */
+const getStoryDetail = async (storyId) => {
+  try {
+    const db = await openDB();
+    const transaction = db.transaction(STORY_DETAILS_STORE_NAME, 'readonly');
+    const store = transaction.objectStore(STORY_DETAILS_STORE_NAME);
+    const request = store.get(storyId);
+
+    return new Promise((resolve, reject) => {
+      request.onsuccess = (event) => resolve(event.target.result);
+      request.onerror = (event) => reject(event.target.error);
+    });
+  } catch (error) {
+    console.error('[IndexedDB] Gagal membuka DB untuk getStoryDetail:', error);
+    return undefined;
+  }
+};
+
+/**
+ * Menghapus semua data dari semua object store yang ditentukan.
+ */
+const clearAllData = async () => {
+  try {
+    const db = await openDB();
+    const objectStoreNames = [STORIES_STORE_NAME, STORY_DETAILS_STORE_NAME];
+    const transaction = db.transaction(objectStoreNames, 'readwrite');
+
+    const promises = objectStoreNames.map(storeName => {
+      return new Promise((resolve, reject) => {
+        const store = transaction.objectStore(storeName);
+        const request = store.clear();
+        request.onsuccess = () => {
+          console.log(`[IndexedDB] Object store '${storeName}' berhasil dikosongkan.`);
+          resolve();
+        };
+        request.onerror = (event) => {
+          console.error(`[IndexedDB] Error mengosongkan '${storeName}':`, event.target.error);
+          reject(event.target.error);
+        };
+      });
+    });
+
+    await Promise.all(promises);
+
+    return new Promise((resolve, reject) => {
+      transaction.oncomplete = () => {
+        console.log('[IndexedDB] Semua data di object stores telah dihapus (transaksi selesai).');
+        resolve();
+      };
+      transaction.onerror = (event) => {
+        console.error('[IndexedDB] Error pada transaksi clearAllData:', event.target.error);
+        reject(event.target.error);
+      };
+    });
+
+  } catch (error) {
+    console.error('[IndexedDB] Error saat menghapus semua data:', error);
+    throw error;
+  }
+};
+
+export {
+  openDB,
+  putStories,
+  getAllStories,
+  putStoryDetail,
+  getStoryDetail,
+  clearAllData,
+};
