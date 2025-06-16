@@ -25,8 +25,8 @@ export default class DetailStoryPage {
     };
     this.map = null;
     this.tileLayers = {};
-    this.isLoading = true; // Tambah state loading
-    this.error = null; // Tambah state error
+    this.isLoading = true; 
+    this.error = null; 
     this.dataFromCache = false;
 
     this.presenter = new DetailStoryPresenter(this, new DetailStoryModel());
@@ -55,7 +55,7 @@ export default class DetailStoryPage {
         const newMain = this.render();
         if (oldMain && newMain) {
           oldMain.parentNode.replaceChild(newMain, oldMain);
-          this.afterRenderLogic(); // Panggil logika afterRender terpisah
+          this.afterRenderLogic(); 
         } else if (newMain && !oldMain) {
             const appContainer = document.getElementById('app');
             if (appContainer) {
@@ -76,8 +76,8 @@ export default class DetailStoryPage {
         this.updateView();
       }
 
-  showToast(message, type = "info") { // Default ke info
-        let toastContainer = document.getElementById('toast-container-detail'); // ID unik
+  showToast(message, type = "info") { 
+        let toastContainer = document.getElementById('toast-container-detail'); 
         if (!toastContainer) {
           toastContainer = document.createElement('div');
           toastContainer.id = 'toast-container-detail';
@@ -118,23 +118,19 @@ export default class DetailStoryPage {
       }
 
   initMap(lat, lon) {
-        if (this.map) { // Hancurkan instance map lama jika ada
+        if (this.map) { 
             this.map.remove();
             this.map = null;
         }
 
         const mapElement = document.getElementById("story-map");
         if (!mapElement) {
-            // console.warn("[DetailStoryPage] Elemen peta tidak ditemukan saat initMap.");
-            return; // Jangan lanjutkan jika elemen peta tidak ada
+            return; 
         }
         
-        // Pastikan elemen peta terlihat sebelum inisialisasi Leaflet
-        // Ini penting jika peta ada di dalam elemen yang awalnya display:none
-        // atau jika DOM belum sepenuhnya siap.
+      
         if (mapElement.offsetParent === null) {
-            // console.warn("[DetailStoryPage] Elemen peta tidak terlihat, menunda initMap.");
-            // setTimeout(() => this.initMap(lat, lon), 100); // Coba lagi setelah sedikit delay
+            
             return;
         }
 
@@ -165,7 +161,6 @@ export default class DetailStoryPage {
           .openPopup();
         L.control.scale({ position: 'bottomleft' }).addTo(this.map);
         
-        // Penting untuk memastikan ukuran peta benar setelah elemen DOM siap
         setTimeout(() => {
             if (this.map) this.map.invalidateSize();
         }, 100);
@@ -195,7 +190,7 @@ export default class DetailStoryPage {
             return container;
         }
 
-    if (!this.story) { // Jika cerita tidak ada (misalnya, ID tidak valid)
+    if (!this.story) { 
             container.innerHTML = `
             <div class="flex flex-col items-center justify-center text-center p-6 min-h-[calc(100vh-200px)]">
               <div class="bg-yellow-50 text-yellow-700 p-6 rounded-xl shadow-md border border-yellow-200 max-w-lg w-full">
@@ -208,7 +203,6 @@ export default class DetailStoryPage {
             return container;
         }
 
-    // Fallback untuk gambar jika photoUrl tidak valid atau error
     const imageOnErrorScript = `this.onerror=null; this.src='https://placehold.co/800x600/e2e8f0/94a3b8?text=Gambar+Rusak'; this.classList.add('object-contain');`;
 
     container.innerHTML = `
@@ -350,13 +344,11 @@ export default class DetailStoryPage {
     return container;
   }
 
-  afterRenderLogic() { // Logika yang dijalankan setelah render
-        // Inisialisasi peta jika ada data cerita dan koordinat
+  afterRenderLogic() { 
         if (this.story && this.story.lat && this.story.lon) {
-            // Menunggu DOM siap sepenuhnya sebelum initMap, terutama jika peta tersembunyi awalnya
-            // atau jika render terjadi sangat cepat.
+            
             requestAnimationFrame(() => {
-                requestAnimationFrame(() => { // Double requestAnimationFrame untuk kepastian
+                requestAnimationFrame(() => { 
                     this.initMap(this.story.lat, this.story.lon);
                 });
             });
@@ -370,7 +362,7 @@ export default class DetailStoryPage {
             if (mainContent) {
               gsap.to(mainContent, {
                 opacity: 0,
-                x: 80, // Animasi ke kanan saat kembali
+                x: 80, 
                 duration: 0.4,
                 ease: "power2.in",
                 onComplete: () => {
@@ -391,9 +383,8 @@ export default class DetailStoryPage {
         });
       }
 
-      async afterRender() { // Fungsi afterRender utama yang dipanggil oleh App.js
-        this.showLoading(); // Tampilkan loading saat pertama kali
+      async afterRender() { 
+        this.showLoading(); 
         await this.presenter.loadStory(this.storyId);
-        // afterRenderLogic akan dipanggil oleh updateView setelah data dimuat
       }
     }

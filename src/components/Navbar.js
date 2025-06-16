@@ -6,7 +6,7 @@ import NavbarModel from '../models/NavbarModel.js';
 
 export default function Navbar() {
   const header = document.createElement('header');
-  header.className = 'w-full bg-white transition-all duration-300 sticky top-0 z-50'; // default: putih tanpa shadow/blur
+  header.className = 'w-full bg-white transition-all duration-300 sticky top-0 z-50';
 
   const skipLink = document.createElement('a');
   skipLink.href = "#main-content";
@@ -160,6 +160,10 @@ export default function Navbar() {
                 <i class="fas fa-plus-circle text-lg w-8 text-gray-500 group-hover:text-blue-600 transition-colors"></i>
                 <span class="ml-2 font-medium">New Story</span>
               </a>
+              <a href="#/offline" data-navigate class="flex items-center px-3 py-2.5 rounded-lg text-gray-700 hover:bg-blue-50 group transition-colors">
+                <i class="fas fa-save text-lg w-8 text-gray-500 group-hover:text-blue-600 transition-colors"></i>
+                <span class="ml-2 font-medium">Cerita Tersimpan</span>
+              </a>
             ` : ''}
             
             ${isLoggedIn ? `
@@ -265,6 +269,13 @@ export default function Navbar() {
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                   </svg>
                   <span>New Story</span>
+                </div>
+                <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
+              </a>
+              <a href="#/offline" data-navigate class="relative group px-3 py-2 rounded-md text-sm font-medium transition-all">
+                <div class="flex items-center gap-2 text-gray-700 group-hover:text-blue-600">
+                    <i class="fas fa-save"></i>
+                    <span>Tersimpan</span>
                 </div>
                 <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
               </a>

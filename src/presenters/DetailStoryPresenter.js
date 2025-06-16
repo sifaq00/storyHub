@@ -1,4 +1,3 @@
-    // src/presenters/DetailStoryPresenter.js
     export default class DetailStoryPresenter {
       constructor(view, model) {
         this.view = view;
@@ -7,26 +6,23 @@
 
       async loadStory(storyId) {
         const token = localStorage.getItem("token");
-        // Bahkan jika offline, kita coba load dari DB jika ID tersedia
         if (!token && !navigator.onLine) {
-            this.view.showLoading?.(); // Panggil jika ada
+            this.view.showLoading?.(); 
             try {
                 const storyDetail = await this.model.fetchStoryFromDB(storyId);
                 if (storyDetail) {
-                    // Untuk detail lokasi, jika offline, kita mungkin tidak bisa fetch dari Nominatim
-                    // Kita bisa menampilkan koordinat yang tersimpan saja atau pesan khusus.
                     let locationDetails = { 
                         address: "Detail lokasi tidak tersedia saat offline", 
                         coordinates: (storyDetail.lat && storyDetail.lon) ? `${storyDetail.lat.toFixed(4)}, ${storyDetail.lon.toFixed(4)} (cached)` : "N/A"
                     };
-                    if (storyDetail.lat && storyDetail.lon && navigator.onLine) { // Coba fetch jika online
+                    if (storyDetail.lat && storyDetail.lon && navigator.onLine) { 
                         locationDetails = await this.model.fetchLocationDetails(storyDetail.lat, storyDetail.lon);
                     } else if (storyDetail.lat && storyDetail.lon) {
-                        // Jika offline tapi ada lat/lon, gunakan itu
+                        
                         locationDetails.address = `Koordinat: ${storyDetail.lat.toFixed(4)}, ${storyDetail.lon.toFixed(4)} (detail alamat tidak tersedia offline)`;
                     }
 
-                    this.view.showStory(storyDetail, locationDetails, true); // fromCache true
+                    this.view.showStory(storyDetail, locationDetails, true); 
                     this.view.showToast?.('Menampilkan data detail cerita offline.', 'info');
                 } else {
                     this.view.showError?.(`Anda offline dan detail cerita untuk ID ${storyId} tidak tersimpan.`);
@@ -42,7 +38,6 @@
 
         if (!token) {
           this.view.showError?.("Anda perlu login untuk melihat detail cerita ini.");
-          // Pertimbangkan untuk tidak langsung navigasi, biarkan pengguna melihat pesan error
           return;
         }
         

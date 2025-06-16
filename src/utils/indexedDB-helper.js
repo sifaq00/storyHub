@@ -1,9 +1,7 @@
-// src/utils/indexedDB-helper.js
-
 const DB_NAME = 'storyhub-db';
 const DB_VERSION = 1;
-const STORIES_STORE_NAME = 'stories'; // Untuk daftar cerita (home)
-const STORY_DETAILS_STORE_NAME = 'story-details'; // Untuk detail cerita individual
+const STORIES_STORE_NAME = 'stories'; 
+const STORY_DETAILS_STORE_NAME = 'story-details'; 
 
 /**
  * Membuka atau membuat database IndexedDB.
@@ -60,14 +58,12 @@ const putStories = async (storiesData) => {
     const transaction = db.transaction(STORIES_STORE_NAME, 'readwrite');
     const store = transaction.objectStore(STORIES_STORE_NAME);
 
-    // Hapus data lama sebelum memasukkan yang baru.
     const clearRequest = store.clear();
     await new Promise((resolve, reject) => {
         clearRequest.onsuccess = resolve;
         clearRequest.onerror = (event) => reject(event.target.error);
     });
 
-    // Masukkan data baru
     for (const story of storiesData) {
       if (story && story.id) {
         store.put(story);
@@ -79,6 +75,30 @@ const putStories = async (storiesData) => {
     });
   } catch (error) {
     console.error('[IndexedDB] Gagal membuka DB atau menyimpan cerita:', error);
+  }
+};
+
+/**
+ * Menyimpan atau memperbarui satu cerita ke object store 'stories'.
+ * @param {Object} story Objek cerita tunggal.
+ */
+const putStory = async (story) => {
+  if (!story || !story.id) {
+    console.error('[IndexedDB] putStory: Cerita harus memiliki ID.');
+    return;
+  }
+  try {
+    const db = await openDB();
+    const transaction = db.transaction(STORIES_STORE_NAME, 'readwrite');
+    const store = transaction.objectStore(STORIES_STORE_NAME);
+    store.put(story);
+
+    return new Promise((resolve, reject) => {
+      transaction.oncomplete = resolve;
+      transaction.onerror = (event) => reject(event.target.error);
+    });
+  } catch (error) {
+    console.error(`[IndexedDB] Gagal menyimpan cerita tunggal (id: ${story.id}):`, error);
   }
 };
 
@@ -150,8 +170,33 @@ const getStoryDetail = async (storyId) => {
 };
 
 /**
- * Menghapus semua data dari semua object store yang ditentukan.
+ * Menghapus satu cerita dari 'stories' dan 'story-details' berdasarkan ID.
+ * @param {string} storyId ID cerita yang akan dihapus.
  */
+const deleteStory = async (storyId) => {
+  try {
+    const db = await openDB();
+    const transaction = db.transaction([STORIES_STORE_NAME, STORY_DETAILS_STORE_NAME], 'readwrite');
+    const storiesStore = transaction.objectStore(STORIES_STORE_NAME);
+    const detailsStore = transaction.objectStore(STORY_DETAILS_STORE_NAME);
+
+    storiesStore.delete(storyId);
+    detailsStore.delete(storyId);
+
+    return new Promise((resolve, reject) => {
+      transaction.oncomplete = () => {
+        console.log(`[IndexedDB] Cerita dengan ID ${storyId} telah dihapus.`);
+        resolve();
+      };
+      transaction.onerror = (event) => reject(event.target.error);
+    });
+  } catch (error) {
+    console.error(`[IndexedDB] Gagal menghapus cerita (id: ${storyId}):`, error);
+    throw error;
+  }
+};
+
+
 const clearAllData = async () => {
   try {
     const db = await openDB();
@@ -195,8 +240,10 @@ const clearAllData = async () => {
 export {
   openDB,
   putStories,
+  putStory,
   getAllStories,
   putStoryDetail,
   getStoryDetail,
+  deleteStory,
   clearAllData,
 };

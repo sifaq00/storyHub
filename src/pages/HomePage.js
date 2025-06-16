@@ -27,6 +27,7 @@ export default class HomePage {
     this.handleScroll = this.handleScroll.bind(this);
     this.handlePageClick = this.handlePageClick.bind(this);
     this.handleClearOfflineData = this.handleClearOfflineData.bind(this);
+    this.handleSaveClick = this.handleSaveClick.bind(this);
   }
 
   getCurrentDateTime() {
@@ -107,12 +108,12 @@ export default class HomePage {
     this.updateView();
   }
 
-  showToast(message, type = 'info') { // Default ke info
-    let toastContainer = document.getElementById('toast-container-main'); // Gunakan ID unik untuk toast di HomePage
+  showToast(message, type = 'info') {
+    let toastContainer = document.getElementById('toast-container-main');
     if (!toastContainer) {
       toastContainer = document.createElement('div');
       toastContainer.id = 'toast-container-main';
-      toastContainer.className = 'fixed bottom-5 right-5 z-[9999] space-y-3 w-auto max-w-md'; // Disesuaikan
+      toastContainer.className = 'fixed bottom-5 right-5 z-[9999] space-y-3 w-auto max-w-md';
       document.body.appendChild(toastContainer);
     }
 
@@ -153,10 +154,10 @@ export default class HomePage {
       toast.classList.remove('animate-fadeInUp');
       toast.classList.add('opacity-0', 'scale-95');
       setTimeout(() => { 
-        if (toast.parentNode === toastContainer) { // Pastikan toast masih ada sebelum dihapus
+        if (toast.parentNode === toastContainer) {
             toast.remove();
         }
-        if (toastContainer.children.length === 0) { // Hapus container jika kosong
+        if (toastContainer.children.length === 0) {
             toastContainer.remove();
         }
     }, 300);
@@ -200,6 +201,23 @@ export default class HomePage {
     }
   }
 
+  handleSaveClick(event) {
+    const saveButton = event.target.closest('.save-story-btn');
+    if (saveButton) {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      const storyId = saveButton.dataset.id;
+      const storyToSave = this.state.stories.find(story => story.id === storyId);
+      
+      if (storyToSave) {
+        this.presenter.saveStoryForOffline(storyToSave);
+        saveButton.disabled = true;
+        saveButton.innerHTML = '<i class="fas fa-check"></i>';
+      }
+    }
+  }
+
   afterRender() {
     if (typeof AOS !== 'undefined') {
       AOS.init({
@@ -217,9 +235,17 @@ export default class HomePage {
     if (scrollToTopBtn) {
       scrollToTopBtn.addEventListener('click', this.scrollToTop);
     }
+    
+    const storiesGrid = document.querySelector('.stories-grid');
+    if (storiesGrid) {
+      storiesGrid.addEventListener('click', this.handleSaveClick);
+    }
 
     document.querySelectorAll('[data-navigate]').forEach(link => {
       link.addEventListener('click', (e) => {
+        if (e.target.closest('.save-story-btn')) {
+          return;
+        }
         e.preventDefault();
         const path = link.getAttribute('href').substring(1);
         this.presenter.navigateTo(path);
@@ -255,24 +281,25 @@ export default class HomePage {
       clearInterval(this.datetimeInterval);
     }
     window.removeEventListener('scroll', this.handleScroll);
+    const storiesGrid = document.querySelector('.stories-grid');
+    if (storiesGrid) {
+      storiesGrid.removeEventListener('click', this.handleSaveClick);
+    }
   }
 
   updateView() {
     const oldMain = document.getElementById('main-content');
-    const newMain = this.render(); // Panggil render untuk mendapatkan elemen baru
+    const newMain = this.render();
     if (oldMain && newMain) {
         oldMain.parentNode.replaceChild(newMain, oldMain);
-        this.afterRender(); // Panggil afterRender setelah elemen baru ada di DOM
-    } else if (newMain && !oldMain) { // Jika oldMain tidak ada (render pertama kali)
-        const appContainer = document.getElementById('app'); // Asumsi container utama adalah #app
+        this.afterRender();
+    } else if (newMain && !oldMain) {
+        const appContainer = document.getElementById('app');
         if (appContainer) {
-            // Bersihkan container app sebelum append child baru untuk menghindari duplikasi navbar/footer
-            // Ini perlu penyesuaian tergantung bagaimana App.js Anda menangani render Navbar dan Footer
-            // Untuk saat ini, kita asumsikan render() HomePage hanya mengembalikan <main>
             const currentMain = appContainer.querySelector('#main-content');
             if (currentMain) currentMain.remove();
             
-            appContainer.appendChild(newMain); // Atau cara lain untuk memasukkan main content
+            appContainer.appendChild(newMain);
             this.afterRender();
         }
     }
@@ -284,44 +311,42 @@ export default class HomePage {
     page.tabIndex = -1;
     page.className = 'flex flex-col min-h-screen';
 
-
     if (this.state.loading) {
-    page.innerHTML = `
-      <div class="min-h-screen flex items-center justify-center">
-        ${LoadingSpinner({ size: 'lg' }).outerHTML}
-      </div>
-    `;
-    return page;
-  }
+      page.innerHTML = `
+        <div class="min-h-screen flex items-center justify-center">
+          ${LoadingSpinner({ size: 'lg' }).outerHTML}
+        </div>
+      `;
+      return page;
+    }
 
     if (this.state.error) {
-    page.innerHTML = `
-      <div class="flex-grow flex flex-col items-center justify-center text-center p-6 bg-gray-50">
-        <div class="bg-red-50 text-red-700 p-6 rounded-xl shadow-md border border-red-200 max-w-lg w-full">
-          <i class="fas fa-exclamation-triangle text-3xl mb-3"></i>
-          <h2 class="text-xl font-semibold mb-2">Oops, Terjadi Kesalahan</h2>
-          <p class="mb-4">${this.state.error}</p>
-          ${this.state.error.toLowerCase().includes('login') ? 
-            `<a href="#/login" data-navigate class="inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Login di Sini</a>` :
-            `<button onclick="location.reload()" class="inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Coba Lagi</button>`
-          }
+      page.innerHTML = `
+        <div class="flex-grow flex flex-col items-center justify-center text-center p-6 bg-gray-50">
+          <div class="bg-red-50 text-red-700 p-6 rounded-xl shadow-md border border-red-200 max-w-lg w-full">
+            <i class="fas fa-exclamation-triangle text-3xl mb-3"></i>
+            <h2 class="text-xl font-semibold mb-2">Oops, Terjadi Kesalahan</h2>
+            <p class="mb-4">${this.state.error}</p>
+            ${this.state.error.toLowerCase().includes('login') ? 
+              `<a href="#/login" data-navigate class="inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Login di Sini</a>` :
+              `<button onclick="location.reload()" class="inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Coba Lagi</button>`
+            }
+          </div>
         </div>
-      </div>
-    `;
-    page.appendChild(Footer()); // Tambahkan footer bahkan saat error
-    return page;
-  }
+      `;
+      page.appendChild(Footer());
+      return page;
+    }
 
     let paginationHTML = '';
     const hasNext = this.state.stories.length === this.state.pageSize && (this.state.currentPage * this.state.pageSize < this.state.totalStories);
     const hasPrev = this.state.currentPage > 1;
     const currentPage = this.state.currentPage;
     
-    // Perhitungan total halaman hanya jika totalStories diketahui dan > 0 (tidak dari cache tanpa info total)
     const totalPages = this.state.totalStories > 0 && !this.state.dataFromCache ? Math.ceil(this.state.totalStories / this.state.pageSize) : currentPage + (hasNext ? 1 : 0);
 
     let pageNumbers = [];
-    const pageWindow = 2; // Jumlah halaman di sekitar halaman saat ini
+    const pageWindow = 2;
 
     if (totalPages > 1) {
         let startPage = Math.max(1, currentPage - pageWindow);
@@ -338,11 +363,10 @@ export default class HomePage {
             pageNumbers.push(i);
         }
     } else if (totalPages === 1 && this.state.stories.length > 0) {
-        pageNumbers.push(1); // Tampilkan halaman 1 jika hanya ada 1 halaman
+        pageNumbers.push(1);
     }
 
-
-    if (totalPages > 1 || (hasPrev || hasNext)) { // Tampilkan pagination jika ada lebih dari 1 halaman atau ada prev/next
+    if (totalPages > 1 || (hasPrev || hasNext)) {
       paginationHTML = `
         <div class="flex justify-center items-center mt-8 sm:mt-12 gap-1 sm:gap-2 flex-wrap px-4">
           ${hasPrev ? `
@@ -389,7 +413,6 @@ export default class HomePage {
 
     page.innerHTML = `
       <div class="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <!-- Header with date/time -->
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <h1 class="text-2xl sm:text-3xl font-bold text-gray-800 flex items-center gap-2">
             <i class="fas fa-book-open text-blue-500"></i>
@@ -399,8 +422,6 @@ export default class HomePage {
             ${this.getDateTimeHTML()}
           </div>
         </div>
-
-        <!-- Filter dan Tombol Clear Cache -->
         <div class="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <label class="flex items-center gap-2 text-sm text-gray-700 p-2 rounded-md hover:bg-gray-100 transition-colors cursor-pointer">
             <input type="checkbox" id="filter-location" class="form-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" ${this.state.location === 1 ? 'checked' : ''} />
@@ -410,7 +431,6 @@ export default class HomePage {
             <i class="fas fa-trash-alt"></i> Hapus Data Offline
           </button>
         </div>
-
         ${this.state.dataFromCache ? `
           <div class="mb-6 p-3 bg-blue-50 border-l-4 border-blue-500 text-blue-700 rounded-r-lg shadow-sm" role="alert">
             <div class="flex items-center">
@@ -420,7 +440,6 @@ export default class HomePage {
           </div>
         ` : ''}
         
-        <!-- Hero Section -->
         <div class="relative rounded-xl sm:rounded-2xl overflow-hidden mb-8 sm:mb-12 h-48 sm:h-64 md:h-80" data-aos="fade-in">
           <div class="absolute inset-0 bg-gradient-to-r from-blue-600 to-teal-500 opacity-90"></div>
           <div class="relative h-full flex flex-col items-center justify-center text-center px-4">
@@ -442,8 +461,6 @@ export default class HomePage {
             </a>
           </div>
         </div>
-
-        <!-- Stories Grid -->
         <div class="mb-8 sm:mb-12">
           <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 sm:mb-6">
             <h2 class="text-xl sm:text-2xl font-bold text-gray-800 flex items-center gap-2" data-aos="fade-up">
@@ -463,14 +480,13 @@ export default class HomePage {
               <p class="text-gray-500 text-base sm:text-lg">Belum ada cerita tersedia. Jadilah yang pertama berbagi!</p>
             </div>
           ` : `
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6" style="grid-auto-rows: 1fr;">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 stories-grid" style="grid-auto-rows: 1fr;">
               ${this.state.stories.map((story, index) => {
                 const storyDate = new Date(story.createdAt).toLocaleDateString('id-ID', {
                   month: 'short',
                   day: 'numeric',
                   year: 'numeric'
                 });
-                // Fallback untuk gambar jika photoUrl tidak valid atau error
                 const imageOnErrorScript = `this.onerror=null; this.src='https://placehold.co/600x400/e2e8f0/94a3b8?text=Gambar+Rusak'; this.classList.add('object-contain');`;
 
                 return `
@@ -479,9 +495,16 @@ export default class HomePage {
                   data-navigate
                   data-aos="fade-up"
                   data-aos-delay="${index * 100}"
-                  class="h-full block group"
+                  class="h-full block group relative"
                   aria-label="Lihat detail cerita ${story.name || 'Tanpa Judul'}"
                 >
+                  <button
+                    class="save-story-btn absolute top-2 right-2 z-10 bg-blue-600 text-white rounded-full w-9 h-9 flex items-center justify-center shadow-lg hover:bg-blue-700 transition transform hover:scale-110 disabled:bg-green-500 disabled:scale-100"
+                    data-id="${story.id}"
+                    title="Simpan untuk dibaca offline"
+                  >
+                    <i class="fas fa-save"></i>
+                  </button>
                   <div class="bg-white rounded-xl sm:rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 h-full flex flex-col border border-gray-100 hover:border-blue-200 overflow-hidden">
                     <div class="relative h-40 sm:h-56 overflow-hidden bg-gray-200">
                       <img
@@ -493,7 +516,7 @@ export default class HomePage {
                         onerror="${imageOnErrorScript}"
                       />
                       <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
-                      <div class="absolute top-3 right-3 sm:top-4 sm:right-4 bg-white/90 text-gray-800 text-xs px-2 py-1 rounded-full flex items-center gap-1 shadow-sm">
+                      <div class="absolute top-3 left-3 sm:top-4 sm:left-4 bg-white/90 text-gray-800 text-xs px-2 py-1 rounded-full flex items-center gap-1 shadow-sm">
                         ${story.lat && story.lon ? '<i class="fas fa-map-marker-alt text-red-500"></i> Dengan Lokasi' : '<i class="fas fa-globe-asia text-gray-500"></i> Tanpa Lokasi'}
                       </div>
                     </div>

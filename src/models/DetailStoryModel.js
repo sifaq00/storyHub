@@ -1,5 +1,4 @@
-// src/models/DetailStoryModel.js
-import { putStoryDetail, getStoryDetail } from '../utils/indexedDB-helper.js';
+import { getStoryDetail } from '../utils/indexedDB-helper.js';
 
 export default class DetailStoryModel {
   async fetchStory(storyId, token) {
@@ -18,9 +17,7 @@ export default class DetailStoryModel {
         throw new Error(data.message || `Gagal mengambil detail cerita ${storyId}.`);
       }
 
-      if (data.story) {
-        await putStoryDetail(data.story);
-      }
+
       return { story: data.story, fromCache: false };
 
     } catch (error) {

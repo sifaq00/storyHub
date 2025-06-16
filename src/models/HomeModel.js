@@ -1,5 +1,4 @@
-// src/models/HomeModel.js
-import { putStories, getAllStories } from '../utils/indexedDB-helper.js';
+import { getAllStories } from '../utils/indexedDB-helper.js';
 
 export default class HomeModel {
   async fetchStories(token, page = 1, size = 18, location = 0) {
@@ -18,9 +17,6 @@ export default class HomeModel {
         throw new Error(data.message || "Gagal mengambil cerita dan tidak ada data offline.");
       }
 
-      if (data.listStory && data.listStory.length > 0) {
-        await putStories(data.listStory);
-      }
       
       return {
         stories: data.listStory,

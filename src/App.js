@@ -1,5 +1,3 @@
-// src/App.js
-
 import Navbar from './components/Navbar.js';
 import HomePage from './pages/HomePage.js';
 import LoginPage from './pages/LoginPage.js';
@@ -7,6 +5,7 @@ import RegisterPage from './pages/RegisterPage.js';
 import PostStoryPage from './pages/PostStoryPage.js';
 import DetailStoryPage from './pages/DetailStoryPage.js';
 import NotFoundPage from './pages/NotFoundPage.js'; 
+import OfflineStoriesPage from './pages/OfflineStoriesPage.js'; 
 import { gsap } from 'gsap';
 
 function getPageTransition(path) {
@@ -29,6 +28,7 @@ export function createApp() {
     '/register': RegisterPage,
     '/post-story': PostStoryPage,
     '/stories/:id': DetailStoryPage,
+    '/offline': OfflineStoriesPage, 
   };
 
   let currentPage = null;
@@ -51,7 +51,6 @@ export function createApp() {
       const path = hash.split('?')[0];
       const oldPage = appContainer.querySelector('#main-content');
 
-      // 1. Tentukan PageComponent dan params terlebih dahulu
       let PageComponent = NotFoundPage;
       let params = {};
       
@@ -76,7 +75,6 @@ export function createApp() {
         }
       }
 
-      // 2. Definisikan fungsi untuk merender halaman baru
       function renderNewPage() {
         appContainer.innerHTML = '';
         appContainer.appendChild(navbarInstance);
@@ -93,9 +91,9 @@ export function createApp() {
             pageElement.tabIndex = -1;
 
             const transition = getPageTransition(path);
-            gsap.set(pageElement, transition.from); // Set state awal
+            gsap.set(pageElement, transition.from);
             appContainer.appendChild(pageElement);
-            gsap.to(pageElement, transition.to); // Animasikan ke state akhir
+            gsap.to(pageElement, transition.to);
           }
 
           if (typeof currentPage.afterRender === 'function') {
@@ -107,17 +105,16 @@ export function createApp() {
         }
       }
 
-      // 3. Jalankan animasi dan render
       if (oldPage) {
         gsap.to(oldPage, {
           opacity: 0,
           y: -40,
           duration: 0.4,
           ease: "power2.in",
-          onComplete: renderNewPage // Panggil render setelah animasi selesai
+          onComplete: renderNewPage
         });
       } else {
-        renderNewPage(); // Jika tidak ada halaman lama, langsung render
+        renderNewPage();
       }
     }
   };

@@ -1,5 +1,3 @@
-// src/sw.js
-
 import { precacheAndRoute, cleanupOutdatedCaches, createHandlerBoundToURL } from 'workbox-precaching';
 import { registerRoute, NavigationRoute } from 'workbox-routing';
 import { NetworkFirst, CacheFirst } from 'workbox-strategies';
@@ -15,11 +13,10 @@ const navigationHandler = createHandlerBoundToURL('index.html');
 const navigationRoute = new NavigationRoute(navigationHandler);
 registerRoute(navigationRoute);
 
-// Cache untuk API StoryHub
 registerRoute(
   ({url}) => url.origin === 'https://story-api.dicoding.dev',
   new NetworkFirst({
-    cacheName: 'story-api-cache', // Nama cache yang akan dihapus
+    cacheName: 'story-api-cache', 
     plugins: [
       new ExpirationPlugin({ maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 7 }),
       new CacheableResponsePlugin({ statuses: [0, 200] }),
